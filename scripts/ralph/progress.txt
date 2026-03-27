@@ -11,4 +11,33 @@
 - Full design doc at `prompt.md` in project root — READ THIS for route/scenery details
 - Pixel art canvas: render at 480x270, scale up with CSS `image-rendering: pixelated`
 - Use requestAnimationFrame for game loop, React for UI overlays only
+- Engine classes in `frontend/src/engine/`: GameLoop, ParallaxRenderer, TrainRenderer, PhysicsEngine, SignalEngine, EventEngine, StationRenderer, InteriorRenderer, AudioEngine, NPCEngine
+- Screens (menu/results/accident/tutorial/pause) in `frontend/src/components/Screens.tsx`
+- HUD control panel in `frontend/src/components/HUD.tsx`
+- GameCanvas orchestrates all engine classes in `frontend/src/components/GameCanvas.tsx`
+- WASM exports: check_signal, calculate_eta, punctuality_score, journey_score, calculate_rating
+- TypeScript strict mode with verbatimModuleSyntax — use `import type` for type-only imports
 ---
+
+## 2026-03-27 - US-001 through US-018 (all stories)
+- Complete overhaul: stripped 3D deps, built full 2D pixel-art train simulator
+- New Zustand store with route data (5 stations), train physics, game clock, signals, reputation
+- 4-layer parallax scrolling with 14 scenery zones covering entire Delhi-Chandigarh route
+- Pixel-art Shatabdi Express with wheel animation, smoke particles
+- HUD: throttle slider, brake, speed display, signal indicator, minimap, clock, reputation stars
+- Train physics: acceleration/braking, speed zones (130/60 km/h), overspeed warnings
+- Station stops with platform scene, NPC boarding, halt countdown timer
+- Signal system with block sections, red signal = accident/game over
+- Train interior cross-section view with seats, pantry, passenger mood indicators
+- 7 NPC types with preferences, mood tracking, and 1-5 star rating system
+- Results screen with punctuality %, safety record, fuel efficiency, per-NPC ratings
+- 5 random events: cattle, fog, signal failure, chain pulling, medical emergency
+- Start menu with animated background, tutorial overlay, pause/resume
+- Rust/WASM rewritten: signals.rs, scheduler.rs, npc.rs (old terrain/pathfinder removed)
+- Web Audio API sound system: train chug, whistle, bell, alert
+- Files changed: ~25 files created/modified across frontend and wasm-engine
+- **Learnings for future iterations:**
+  - Use `import type` for type-only imports (verbatimModuleSyntax enforced)
+  - Engine classes are module-scoped singletons in GameCanvas.tsx — reset them on game restart
+  - WASM functions fallback gracefully with try/catch in HUD
+  - Parallax scroll offset is km*50 pixels — adjust for visual density

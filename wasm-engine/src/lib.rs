@@ -1,8 +1,8 @@
 use wasm_bindgen::prelude::*;
 
-pub mod terrain;
-pub mod pathfinder;
-pub mod validator;
+pub mod signals;
+pub mod scheduler;
+pub mod npc;
 
 /// Optional init function called when the WASM module is instantiated.
 #[wasm_bindgen(start)]
