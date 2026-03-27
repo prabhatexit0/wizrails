@@ -1,0 +1,17 @@
+[build]
+  base = "/"
+  publish = "frontend/dist"
+  command = """
+    curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh && \
+    cd wasm-engine && wasm-pack build --target web && \
+    cd ../frontend && npm install && npm run build \
+  """
+
+[build.environment]
+  NODE_VERSION = "20"
+  RUST_VERSION = "stable"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
