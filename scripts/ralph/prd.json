@@ -1,0 +1,337 @@
+{
+  "project": "Wizrails",
+  "branchName": "ralph/2d-retro-overhaul",
+  "description": "Complete overhaul of Wizrails from 3D track builder to 2D pixel-art retro train simulator on the New Delhi to Chandigarh Shatabdi Express route. See prompt.md for full design doc.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Strip 3D dependencies and set up 2D canvas foundation",
+      "description": "Remove all React Three Fiber, drei, Three.js, and postprocessing dependencies. Set up a Canvas 2D rendering system with a game loop using requestAnimationFrame. Keep React for UI overlays, Zustand for state, and the Rust/WASM setup. The canvas should render at 480x270 base resolution and CSS scale up with image-rendering: pixelated.",
+      "acceptanceCriteria": [
+        "All @react-three/* and three and postprocessing packages removed from package.json",
+        "All 3D component files removed (Terrain.tsx, TrackGrid.tsx, Trees.tsx, etc.)",
+        "New GameCanvas component renders a <canvas> element at 480x270 scaled to fill viewport",
+        "Game loop runs via requestAnimationFrame with delta time calculation",
+        "Canvas renders a test rectangle to prove it works",
+        "image-rendering: pixelated CSS applied to canvas",
+        "npm run build passes with zero errors",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Create new Zustand game store for 2D train sim",
+      "description": "Replace the existing 3D-oriented store with a new one for the train simulator. Must include: route data (5 stations with km positions and arrival times), train state (position in km, speed, throttle, braking), game clock (starts at 17:15), game phase (menu/running/station-stop/results), signal state, and reputation score.",
+      "acceptanceCriteria": [
+        "store.ts fully rewritten with new GameState interface",
+        "Route data includes all 5 stations: New Delhi (km 0), Panipat (km 90), Kurukshetra (km 157), Ambala (km 199), Chandigarh (km 266)",
+        "Each station has name, code, km position, scheduled arrival time, halt duration",
+        "Train state: positionKm, speedKmh, throttle (0-1), isBraking, maxSpeed",
+        "Game clock with currentTime (starts 17:15), timeScale for fast-forward",
+        "Signal state type defined (red/yellow/green)",
+        "Reputation score and passenger ratings array",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement parallax scrolling background system",
+      "description": "Build a multi-layer parallax scrolling renderer on the canvas. 4 layers: far sky/clouds, mid buildings/fields/landmarks, near trackside elements (poles, signals, fences), and foreground (tracks/train). Each layer scrolls at different speeds relative to train speed. The background content changes based on current km position on the route.",
+      "acceptanceCriteria": [
+        "ParallaxRenderer class that draws 4 layers at different scroll speeds",
+        "Layers tile/repeat seamlessly as train moves",
+        "Scroll speed proportional to actual train speed from store",
+        "Background changes based on positionKm (different scenery zones)",
+        "At least 2 distinct zone visuals working: urban Delhi (grey, buildings) and farmland (green/golden fields)",
+        "Sky gradient changes over time (golden afternoon → sunset → dusk)",
+        "Renders correctly on the 480x270 canvas",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Render pixel-art train exterior and tracks",
+      "description": "Draw a pixel-art Shatabdi Express train on the foreground layer. The train stays roughly centered horizontally while the background scrolls. Show railway tracks beneath the train. The train should have a recognizable Indian Railways look: blue-and-cream livery with the distinctive Shatabdi stripes.",
+      "acceptanceCriteria": [
+        "Pixel art train drawn on canvas — locomotive + 2-3 visible carriages",
+        "Train has blue body, cream/white stripe, and visible windows",
+        "Railway tracks (two rails + wooden ties) render beneath the train",
+        "Train has subtle animation: wheels turning relative to speed, slight bounce",
+        "Smoke/exhaust particle pixels from locomotive when moving",
+        "Train stays centered while background scrolls",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Build HUD control panel with speed and signal controls",
+      "description": "Create the bottom control panel as a React overlay (not canvas). Include: throttle slider (0-100%), brake button, current speed display (km/h), speed limit indicator, next signal color and distance, next station name and ETA, mini-map (line with station dots and current position), and in-game clock.",
+      "acceptanceCriteria": [
+        "Control panel renders as a fixed React overlay at bottom of screen",
+        "Throttle slider controls train speed (0% to 100%)",
+        "Brake button that decelerates the train",
+        "Speed display shows current speed in km/h",
+        "Speed limit indicator shows current zone max speed",
+        "Signal indicator shows next signal color (red/yellow/green circle)",
+        "Next station info: name, distance, ETA",
+        "Mini-map line showing all 5 stations with current position marker",
+        "In-game clock displaying current time (HH:MM format)",
+        "Retro pixel-style font and bordered panel aesthetic",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Implement train physics and speed management",
+      "description": "Wire up the throttle and brake to actual train movement. Train accelerates based on throttle, decelerates on brake. Speed is clamped to the current zone's speed limit. Train position advances based on speed. Implement speed zones: 130 km/h max on open track, 60 km/h through station areas, auto-slow approach to stations.",
+      "acceptanceCriteria": [
+        "Train accelerates smoothly when throttle > 0",
+        "Train decelerates when brake is applied",
+        "Train speed is clamped to current speed zone limit",
+        "Position (km) advances based on speed and delta time",
+        "Speed zones defined: 130 km/h open track, 60 km/h near stations (within 2 km)",
+        "Overspeeding in restricted zone shows visual warning",
+        "Train stops at 0 km/h when braking from any speed",
+        "Game clock advances proportionally (3h15m journey maps to real route)",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Implement station stops with boarding/alighting",
+      "description": "When the train reaches a station's km position and is stopped (speed=0), enter station-stop mode. Show a station platform view on canvas with pixel-art station building and platform. Display a halt timer counting down. Animated pixel NPCs walk on/off the train. Player must depart before timer expires or lose reputation.",
+      "acceptanceCriteria": [
+        "Game detects arrival at station when train is within 0.5 km and speed < 5 km/h",
+        "Station-stop mode activates: background changes to station platform scene",
+        "Each station has a distinct pixel-art building matching real station character",
+        "Halt timer counts down (2 min for Panipat/Kurukshetra, 3 min for Ambala)",
+        "Pixel NPC sprites walk onto and off the train during halt",
+        "Depart button appears; must be clicked to resume journey",
+        "Late departure (after halt timer) shows penalty notification",
+        "Early departure is allowed but passengers may not all board",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Build signal system with block sections",
+      "description": "Place signals along the route at realistic intervals (~every 5-10 km). Signals cycle between green/yellow/red based on simulated traffic. Player must respond: green = full speed, yellow = slow to 60 km/h, red = stop completely. Running a red signal triggers an accident/game-over. Show signal visuals on the near-background parallax layer.",
+      "acceptanceCriteria": [
+        "Signals placed every 5-10 km along the 266 km route",
+        "Each signal has a state: green, yellow, or red",
+        "Signals rendered as pixel-art posts with colored lights in the near-background layer",
+        "Upcoming signal color and distance shown in HUD",
+        "Green: no restriction. Yellow: speed limit 60 km/h. Red: must stop",
+        "Passing a red signal at speed > 5 km/h triggers accident event",
+        "Accident shows game-over screen with option to restart",
+        "Signals change based on simple simulated block occupancy (random other trains)",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Rich scenery for Delhi-Panipat segment",
+      "description": "Fill in detailed pixel-art scenery for the Delhi to Panipat segment (km 0-90). This must feel authentic: Delhi rail yards with parked trains → Yamuna river bridge (wide sandy floodplain) → brick kilns with chimneys → endless wheat and mustard fields (golden/yellow) → GT Road with trucks → canal crossings → IOC Panipat Refinery (industrial skyline with flare stacks).",
+      "acceptanceCriteria": [
+        "Km 0-10: Delhi urban — apartment blocks, overhead wires, metro viaducts, rail yards",
+        "Km 10-20: Yamuna crossing — wide sandy/green floodplain, bridge structure",
+        "Km 20-50: Agricultural plains — wheat fields (golden), mustard fields (yellow flowers), brick kilns with tall chimneys",
+        "Km 50-70: GT Road visible parallel — trucks, buses, tractors as pixel sprites",
+        "Km 70-85: Canal crossings, more fields, small villages with flat-roofed houses",
+        "Km 85-90: Panipat Refinery — industrial flare stacks, storage tanks, distillation towers",
+        "All scenery renders as pixel art on parallax layers",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Rich scenery for Panipat-Kurukshetra segment",
+      "description": "Detailed pixel-art scenery for km 90-157. Greener irrigated farmland → sugarcane fields → Markanda River → tube-well pump houses → larger villages → dharamshalas and ashrams appearing near Kurukshetra. Sunset lighting begins.",
+      "acceptanceCriteria": [
+        "Km 90-110: Greener farmland, more irrigated look, sugarcane fields (tall green walls)",
+        "Km 110-130: Markanda River crossing (seasonal sandy bed), villages with brick houses",
+        "Km 130-150: Tube-well pump houses, larger villages, dharamshalas/ashrams",
+        "Km 150-157: Kurukshetra approach — temple spires, religious signage, pilgrimage town feel",
+        "Sky color transitions toward sunset (warm orange tones)",
+        "All scenery renders as pixel art on parallax layers",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Rich scenery for Kurukshetra-Ambala-Chandigarh segment",
+      "description": "Detailed pixel-art scenery for km 157-266. Reddish-brown soil → Ghaggar River → more trees (neem, eucalyptus) → military cantonment near Ambala → undulating terrain → Shivalik Hills on horizon → Chandigarh's modern boulevards. Full sunset to dusk transition.",
+      "acceptanceCriteria": [
+        "Km 157-180: Reddish-brown soil, Ghaggar River crossing, mango/neem groves",
+        "Km 180-199: Military cantonment buildings, barracks, ordnance depots, eucalyptus plantations",
+        "Km 199-230: Terrain becomes undulating (subtle elevation changes in background)",
+        "Km 230-260: Shivalik Hills visible on far horizon (blue-green mountain silhouette), denser vegetation",
+        "Km 260-266: Chandigarh — wide boulevards, organized sectors, modern buildings, greenery",
+        "Sky fully transitions from sunset to dusk (deep blue with city lights)",
+        "All scenery renders as pixel art on parallax layers",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Train interior cross-section view",
+      "description": "Add a toggleable train interior view showing a side-view cross-section of the Shatabdi carriages. Player can see seats, pantry car, vestibule areas, and windows showing scenery. This is the management view where the player can interact with the train.",
+      "acceptanceCriteria": [
+        "Toggle button switches between exterior/interior view",
+        "Interior shows side-view cross-section of 2-3 carriages",
+        "Seats visible in AC Chair Car layout (2+2 rows)",
+        "Pantry car section identifiable",
+        "Windows show the same parallax scenery as exterior view",
+        "Pixel-art interior details: seat cushions, luggage racks, aisle",
+        "View scrolls horizontally to see different carriages",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "NPC passenger system with boarding and preferences",
+      "description": "Implement NPC passengers that board at each station. Each NPC has a type (Business, Family, Pilgrim, Student, Army Officer, Food Blogger, Tourist), visible as a distinct pixel sprite, and carries preferences that affect their rating. NPCs sit in seats and have mood indicators.",
+      "acceptanceCriteria": [
+        "7 NPC types defined with distinct pixel-art sprites (at least 8x16 px each)",
+        "NPCs board at appropriate stations (e.g., Pilgrim at Kurukshetra, Army at Ambala)",
+        "Each NPC type has defined preferences (punctuality weight, food weight, comfort weight, etc.)",
+        "NPCs appear in seats in the interior view",
+        "Mood indicator shown above each NPC (happy/neutral/unhappy pixel icon)",
+        "Passenger manifest panel shows who's onboard and their type",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Rating and scoring system",
+      "description": "At the end of the journey (Chandigarh arrival) and during the journey, NPCs rate their experience. Calculate ratings based on punctuality, speed management, signal obedience, food service, and comfort. Show a journey results screen with breakdown.",
+      "acceptanceCriteria": [
+        "Each NPC calculates a 1-5 star rating based on their weighted preferences",
+        "Punctuality factor: on-time arrivals at each station boost rating",
+        "Safety factor: signal violations, overspeeding, hard braking reduce rating",
+        "Overall reputation score displayed in HUD (average of all ratings)",
+        "Journey results screen at Chandigarh: total score, per-category breakdown, per-NPC ratings",
+        "Results show: punctuality %, fuel efficiency, passenger satisfaction, safety record",
+        "Option to play again from results screen",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Random events system",
+      "description": "Implement random events that occur during the journey to keep gameplay dynamic. Events include: cattle on tracks, fog patches, signal failures, chain pulling, medical emergencies. Each requires a player response.",
+      "acceptanceCriteria": [
+        "At least 5 distinct random events implemented",
+        "Cattle on tracks: must brake hard, visual of cow on tracks",
+        "Fog patch: reduced visibility (darken/blur parallax), must slow down",
+        "Signal failure: must proceed at restricted speed (15 km/h)",
+        "Chain pulling: train auto-stops, player investigates (timer to resume)",
+        "Medical emergency: popup with choice — stop at next station or call ahead",
+        "Events trigger at random intervals (not too frequent, not too rare)",
+        "Each event affects score: good response = neutral/bonus, bad response = penalty",
+        "Visual notification/popup for each event",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Start menu and game flow polish",
+      "description": "Add a start screen with pixel-art title, a pre-departure phase at New Delhi where the player can review their train, and smooth transitions between all game phases. Include a how-to-play tutorial overlay.",
+      "acceptanceCriteria": [
+        "Start screen: 'WIZRAILS' pixel-art title with animated train, 'Start Journey' button",
+        "Pre-departure phase at New Delhi: overview of train, passenger manifest preview",
+        "Smooth fade transitions between game phases",
+        "How-to-play overlay explaining controls (throttle, brake, signals, stations)",
+        "Pause menu (Esc key) with Resume / Restart / Quit options",
+        "Game properly resets on restart",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Update Rust/WASM engine for train sim",
+      "description": "Update the Rust WASM module: remove terrain generation, add signal logic (block section occupancy), scheduling calculations (ETA, delay, punctuality score), and NPC rating calculation. Expose new functions via wasm_bindgen.",
+      "acceptanceCriteria": [
+        "Old terrain.rs and pathfinder.rs removed",
+        "New signals.rs: check_signal(position, speed, block_states) -> signal state",
+        "New scheduler.rs: calculate_eta(position, speed, target_km) -> arrival time",
+        "New scheduler.rs: punctuality_score(scheduled, actual) -> score",
+        "New npc.rs: calculate_rating(preferences, journey_stats) -> rating",
+        "All functions exported via wasm_bindgen",
+        "wasm-pack build --target web succeeds",
+        "Frontend imports and uses at least one new WASM function",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Audio system with train sounds",
+      "description": "Add a basic audio system. Generate or load retro-style sound effects: train chugging (speed-dependent), whistle at departures, signal bell, station announcements (simple chime), and event notification sounds.",
+      "acceptanceCriteria": [
+        "Audio manager class that handles playing/stopping sounds",
+        "Train chugging sound that changes pitch/speed with train speed",
+        "Whistle sound plays at station departure",
+        "Bell/chime sound at station arrival",
+        "Alert sound for random events and signal warnings",
+        "Master volume control accessible from pause menu",
+        "Sounds generated programmatically (Web Audio API oscillators) for retro feel",
+        "Audio can be muted/unmuted",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

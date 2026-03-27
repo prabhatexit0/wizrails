@@ -1,111 +1,316 @@
-# 🚂 Wizrails — Vibe Coding Prompt
+# Wizrails — 2D Pixel Retro Train Simulator
 
-## Paste this into your AI coding tool (Claude Code / Cursor / etc.)
+## Core Concept
+
+A **2D pixel-art retro-style** train management game set on the **New Delhi → Chandigarh Shatabdi Express** route. The player is the train operator — managing the train interior, scheduling departures, handling signals, avoiding accidents, and keeping passengers happy.
+
+The route is **pre-built and fixed** — the player does NOT build tracks. Instead, the game is about **running the railway**: operating the train, managing its interior, dealing with NPCs, and mastering the operational challenges of Indian rail.
+
+The scenery scrolling by the window should feel **rich, authentic, and atmospheric** — like you're actually looking out the window of the Shatabdi Express as it races from Delhi's urban sprawl through Haryana's golden fields to Chandigarh's planned-city greenery.
 
 ---
 
-Build me a **3D Indian Railways Track Builder game called Wizrails** using **React + TypeScript** with **React Three Fiber (R3F)** and **@react-three/drei** for 3D rendering.
-
-### Core Concept
-
-The player builds railway tracks on a 3D terrain map representing the route from **New Delhi → Chandigarh → Shimla**. The terrain gradually rises from the flat plains of Delhi, through the green fields near Chandigarh, into the steep Himalayan foothills approaching Shimla. Once a valid track is laid connecting all three stations, the player can hit "Depart" and watch a train chug along their route in real time.
-
-### Tech Stack
+## Tech Stack
 
 - **React 18+ with TypeScript** (Vite)
-- **React Three Fiber** (`@react-three/fiber`) + **Drei** (`@react-three/drei`) for the 3D scene
 - **Zustand** for game state management
-- **Rust → WASM** (via `wasm-pack`) for the performance-critical parts:
-  - **Pathfinding engine** — A* or Dijkstra over the track grid, considering elevation cost
-  - **Terrain generation** — procedural heightmap with noise (use the `noise` crate), exported as a flat `Float32Array` to JS
-  - **Track validation** — check connectivity, max gradient limits, and whether all 3 stations are connected
-- Everything else (rendering, UI, input handling) stays in TypeScript/React
+- **Canvas 2D** for pixel-art rendering (NOT WebGL/Three.js — keep it retro)
+- **Rust → WASM** (via `wasm-pack`) for:
+  - **Signal logic engine** — manages train signals, block sections, and collision detection
+  - **Scheduling engine** — calculates delays, punctuality scores, optimal speed profiles
+  - **Pathfinding/routing** — for NPC movement within train carriages
+- Everything else (rendering, UI, input) stays in TypeScript/React
 
-### The Map & Terrain
+---
 
-- Grid-based map, roughly **24 columns × 40 rows**, each cell ~1 unit
-- Elevation profile (south to north):
-  - **Rows 30-40 (Delhi):** Flat plains, elevation ~0. Dusty golden-green ground. Sparse trees.
-  - **Rows 16-30 (Punjab/Haryana):** Gentle rolling fields, elevation 0–2. Lush green, farmland vibes. Scattered villages (tiny cube clusters).
-  - **Rows 8-16 (Chandigarh/Kalka):** Foothills begin, elevation 2–5. Mix of green and rocky brown. Denser trees.
-  - **Rows 0-8 (Shimla):** Mountain terrain, elevation 5–12. Rocky grey-brown, pine trees, snow-capped peaks at the very top. Steep gradients.
-- Generate the heightmap in **Rust/WASM** using simplex/perlin noise, flatten it to `Float32Array`, pass to JS
-- Render terrain as a displaced plane geometry or grid of boxes with vertex coloring based on elevation
+## The Route: New Delhi → Chandigarh (Shatabdi Express)
 
-### Three Stations (fixed positions on the map)
+The route is **266 km**, taking about **3 hours 15 minutes**. It passes through 5 real stations. The entire route is pre-built — the player just operates the train along it.
 
-1. **🏛️ New Delhi** — Row ~35, center. Iconic reddish-orange station building. Flat area.
-2. **🌳 Chandigarh** — Row ~20, slightly offset. Green-themed station. Moderate elevation.
-3. **🏔️ Shimla** — Row ~3, nestled in mountains. Blue/stone-themed station. High elevation.
+### Stations (in order, with real data)
 
-Each station should be a small 3D model (boxes + domes + platforms — keep it simple but charming). Show station names as `<Html>` labels from drei.
+1. **New Delhi (NDLS)** — KM 0
+   - Starting station. 16 platforms, Indo-Islamic arched facade, cream-and-red exterior
+   - Platform chaos: coolies in red shirts, chai wallahs, samosa vendors, families with luggage
+   - Dense urban Delhi visible — apartment blocks, metro viaducts, signal gantries
+   - Departure time: 17:15
 
-### Track Building Mechanics
+2. **Panipat Junction (PNP)** — KM 90
+   - 2-minute halt. 5 platforms, modest colonial-era building
+   - Historic battleground city, known as "Textile City"
+   - IOC Panipat Refinery visible — flare stacks, distillation towers
+   - Arrival: 18:18
 
-- **Click cells** to toggle track pieces on/off
-- Tracks should auto-orient: show straight rails if neighbors are linear, curved if turning (even simple 90° bends are fine)
-- Visual: wooden ties + metallic rails + gravel ballast bed, all sitting on the terrain surface
-- **Gradient constraint:** tracks can't go up more than X elevation units per cell (the Rust validator checks this). If a placement is invalid, flash the cell red briefly.
-- **Right-click drag** to orbit camera, **scroll** to zoom
+3. **Kurukshetra Junction (KKDE)** — KM 157
+   - 2-minute halt. Junction station, pilgrimage-town feel
+   - Mahabharata battleground, Brahma Sarovar nearby
+   - More temples and religious signage around station
+   - Arrival: 19:00
 
-### Train Ride
+4. **Ambala Cantonment (UMB)** — KM 199
+   - 3-minute halt. One of India's busiest junctions (~300 trains/day)
+   - Major Indian Army base — military character, cantonment gardens
+   - Colonial-era architecture, famous Ambala sweets
+   - Arrival: 19:50
 
-- "🚂 Depart" button — calls the Rust/WASM pathfinder to find the optimal path from Delhi → Chandigarh → Shimla through placed tracks
-- If no valid path exists, show a toast: "Track incomplete! Connect all stations."
-- If valid: animate a cute low-poly train along the path
-  - Train = engine (dark blue body, saffron stripe, small chimney) + 1-2 carriages
-  - Smooth interpolation between cells, train banks slightly on curves
-  - Camera has a "follow mode" toggle — chase cam behind the train vs free orbit
-  - Show a progress bar: Delhi ——●—— Chandigarh ——○—— Shimla
-  - When passing each station, trigger a small celebration (particle burst, station name popup)
+5. **Chandigarh (CDG)** — KM 266
+   - Terminal station. Modern, clean, organized (Le Corbusier's planned city)
+   - Shivalik Hills visible on northern horizon — blue-green mountain line
+   - Arrival: 20:30
 
-### Visual Style: Realistic-ish yet Cartoonish
+### Scenery Between Stations (scrolling parallax backgrounds)
 
-- **Low-poly but warm** — think a hand-painted miniature diorama
-- Soft shadows, warm golden-hour lighting (late afternoon Indian sun)
-- Slight tilt-shift / depth of field effect (drei's `<EffectComposer>` + `<DepthOfField>`)
-- Color palette: saffron, forest green, earthy browns, sky blue — Indian flag vibes without being literal
-- Cartoon-scale proportions: chunky trees, slightly oversized stations, toy-like train
-- Subtle ambient particles: dust motes in plains, mist in mountains
+**Delhi → Panipat (KM 0-90):**
+- Delhi rail yards → Yamuna river bridge (wide sandy floodplain) → brick kilns with tall chimneys → endless wheat/mustard fields (golden/yellow) → GT Road with trucks running parallel → canal crossings → IOC Panipat Refinery (industrial skyline)
+- Color palette: grey concrete → dusty brown → golden-green fields
+- Time: Late afternoon golden sunlight
 
-### UI Overlay
+**Panipat → Kurukshetra (KM 90-157):**
+- Greener, more irrigated farmland → sugarcane fields (tall green walls) → Markanda River (seasonal sandy bed) → tube-well pump houses → larger villages with brick-and-concrete houses → dharamshalas and ashrams appearing
+- Color palette: lush greens, earthy browns
+- Time: Approaching sunset, warm orange light
 
-- **Top bar:** Game title "WIZRAILS" with a tricolor gradient (saffron → white → green), track count, total cost
-- **Right sidebar:** Station checklist (✅ connected / ⬜ not yet) 
-- **Bottom bar:** Tool selector (place track / remove track / bulldoze area), Depart button, Clear All
-- **Optional fun:** A budget system — you start with ₹100 crore, each track piece costs more at higher elevations (mountain tracks are expensive!). Display remaining budget. If you run out, you gotta optimize your route.
+**Kurukshetra → Ambala (KM 157-199):**
+- Soil shifts to reddish-brown → Ghaggar River crossing (wide seasonal bed) → more trees (neem, sheesham, mango groves, eucalyptus) → military cantonment buildings and barracks → ordnance depots
+- Color palette: green with reddish-brown earth, military khaki
+- Time: Sunset, golden-to-purple sky
 
-### Rust/WASM Module Structure
+**Ambala → Chandigarh (KM 199-266):**
+- Landscape transforms — flat plains give way to undulating terrain → Shivalik foothills appear on horizon → denser vegetation → reddish laterite soil → Chandigarh's wide boulevards and organized sectors → abundant greenery
+- Color palette: rich greens, blue-grey hills, modern whites
+- Time: Dusk, deep blue sky with city lights
+
+---
+
+## Game Modes
+
+### 1. Train Interior Management (Core Loop)
+
+The player sees a **side-view cross-section** of the Shatabdi Express — 2-3 carriages visible at a time, scrollable. Each carriage has:
+
+- **Seats** (AC Chair Car layout — 2+2 or 2+3 seating)
+- **Pantry car** — where food is prepared and loaded
+- **Vestibule areas** — between carriages, where passengers stand, vendors pass through
+- **Luggage racks** — overhead storage
+- **Windows** — showing the scrolling scenery outside
+
+**Player actions in train interior:**
+- Arrange seating layout (upgrade/downgrade seat quality)
+- Set up food service (choose menu items, timing of service)
+- Manage cleanliness (assign cleaning at stations)
+- Handle AC temperature settings
+- Place amenities: charging points, reading lights, curtains, blankets
+- Emergency equipment placement
+
+### 2. NPC Passenger System
+
+Random NPC passengers board at each station with different preferences and expectations:
+
+**NPC Types:**
+- **Business Traveler** — wants quiet, charging points, good WiFi, on-time arrival. Rates punctuality highly.
+- **Family with Kids** — wants window seats, snacks, spacious area. Rates food and comfort.
+- **Elderly Pilgrim** — boarding at Kurukshetra, wants lower berth equivalent, easy access. Rates accessibility.
+- **College Students** — group, wants cheap tickets, doesn't mind crowding. Rates value.
+- **Army Officer** — boarding at Ambala, wants discipline and order. Rates cleanliness and punctuality.
+- **Food Blogger** — rates the pantry food quality extensively. Their review affects future bookings.
+- **Foreign Tourist** — fascinated by everything, rates the "experience" — scenery visibility, cultural touches.
+
+**Rating System:**
+- Each NPC rates the journey 1-5 stars based on their preferences
+- Ratings affect your **Railway Reputation Score** (displayed prominently)
+- High reputation = more premium passengers = more revenue
+- Low reputation = complaints, fewer bookings, potential "show cause notice" from Railway Board
+
+### 3. Operations & Skill Challenges
+
+**Signal Management:**
+- The route has block sections with signals (red/yellow/green)
+- Player must watch for signals and respond appropriately
+- Red signal = STOP. Missing a red signal = accident (game over scenario)
+- Yellow signal = slow down, prepare to stop
+- Green signal = proceed at full speed
+- Signals change based on track occupancy (other trains on the route)
+
+**Scheduling & Punctuality:**
+- Each station has a target arrival/departure time
+- Player controls speed (but higher speed = more fuel cost)
+- Arriving late loses reputation; arriving too early means waiting
+- Random events cause delays: cattle on tracks, fog (common in Haryana winter), signal failures, medical emergencies
+- Player must decide: speed up to recover time (risky, costly) or accept the delay
+
+**Speed Management:**
+- Speed zones: 130 km/h max on straight sections, 60 km/h through stations, slower on curves
+- Overspeeding triggers warnings and potential derailment risk
+- Fuel efficiency scoring — optimal speed management earns bonus
+
+**Accident Avoidance:**
+- Level crossings with vehicles/pedestrians
+- Other trains at junctions (especially Ambala Junction — 300 trains/day!)
+- Weather events: fog reduces visibility, rain makes tracks slippery
+- Animals on tracks (cows, dogs — very real in India)
+
+### 4. Station Operations
+
+At each station stop:
+- Passengers board/alight (animated pixel NPCs)
+- Player can trigger announcements
+- Quick maintenance tasks (water refill, cleaning)
+- Food loading from station vendors
+- Timer shows remaining halt time — depart on time!
+
+---
+
+## Visual Style: 2D Pixel Retro
+
+- **Resolution feel:** 320×180 base resolution, scaled up (like classic SNES/GBA games)
+- **Pixel art style:** Warm, detailed pixel art. 16-32px character sprites. Rich backgrounds.
+- **Color palette:** Warm Indian tones — saffron, earthy browns, forest greens, dusty golds, deep blues
+- **Parallax scrolling:** 3-4 layers of background scenery scrolling at different speeds
+  - Far background: sky, clouds, distant hills/city skyline
+  - Mid background: fields, trees, buildings, landmarks
+  - Near background: trackside elements — signals, poles, fences, platforms
+  - Foreground: the train itself, tracks, nearby objects
+- **Day progression:** Sky color changes from golden afternoon (Delhi) → sunset (Kurukshetra) → dusk (Chandigarh)
+- **Weather effects:** Dust haze in plains, evening mist near Chandigarh (pixel-art particle effects)
+- **UI:** Retro pixel font, bordered panels, CRT-style scanline overlay (subtle, toggleable)
+
+---
+
+## UI Layout
+
+### Main Game View
+- **Top 60% of screen:** Scrolling scenery / train exterior view OR train interior cross-section (toggle between them)
+- **Bottom 40%:** Control panel
+
+### Control Panel (Bottom)
+- **Speed control:** Throttle slider (0% to 100%) + brake button
+- **Current speed** display (km/h) + speed limit indicator
+- **Signal indicator:** Shows next signal color and distance
+- **Station info:** Next station name, ETA, distance remaining
+- **Reputation score:** Star rating (updated live)
+- **Mini-map:** Simple line showing Delhi—Panipat—Kurukshetra—Ambala—Chandigarh with current position dot
+- **Clock:** Current in-game time
+
+### Station Screen (during halts)
+- Platform view — pixel art station with NPCs boarding/alighting
+- Passenger manifest panel — who's boarding, their type, preferences
+- Quick action buttons: Clean, Refill Water, Load Food, Make Announcement
+- Departure countdown timer
+
+### Train Interior View (toggleable)
+- Side-view cross-section of carriages
+- Clickable seats/areas for management
+- NPC passengers visible with mood indicators (emoji-style pixel icons)
+- Pantry car operations
+
+---
+
+## Game Flow
+
+1. **Start Screen:** "WIZRAILS" title in pixel font, train animation, "Start Journey" button
+2. **Pre-departure (New Delhi):** Set up train interior, check passenger manifest, prepare food service
+3. **Journey begins:** Train departs New Delhi at 17:15
+4. **Between stations:** Manage speed, watch signals, enjoy scenery, handle random events
+5. **Station stops:** Quick operations — passengers in/out, maintenance, depart on time
+6. **Journey end (Chandigarh):** Final ratings from all passengers, journey summary, score
+7. **Results screen:** Total reputation, punctuality score, fuel efficiency, passenger satisfaction breakdown, revenue earned
+
+---
+
+## Revenue & Progression
+
+- Earn revenue from ticket sales (based on reputation and class of service)
+- Spend on train upgrades: better seats, pantry equipment, amenities
+- Unlock cosmetic upgrades: train livery colors, station decorations
+- Progressive difficulty: later runs have more random events, tighter schedules, pickier passengers
+
+---
+
+## Random Events (keep gameplay dynamic)
+
+- Cattle on tracks — brake hard or use horn
+- Fog patch — reduced visibility, must slow down
+- Signal failure — proceed with caution at restricted speed
+- Medical emergency — passenger needs help, decide to stop or call ahead
+- Chain pulling — someone pulls emergency chain, investigate
+- VIP passenger — Railway Minister is onboard, everything must be perfect
+- Food complaint — passenger finds something wrong, handle diplomatically
+- Track maintenance — speed restriction zone
+- Monsoon flooding — waterlogged tracks, reduced speed
+
+---
+
+## Audio (stretch goal)
+
+- Rhythmic train chugging sound (changes with speed)
+- Station announcements in Hindi/English (pixel-style beeps or real audio)
+- Whistle at departures and level crossings
+- Ambient sounds: wind, birds (plains), evening crickets (dusk)
+- Signal bell sounds
+- NPC reaction sounds (happy chime, angry buzz)
+
+---
+
+## Rust/WASM Module Structure
 
 ```
 wasm-engine/
-├── Cargo.toml          # wasm-pack, noise crate, serde
+├── Cargo.toml
 ├── src/
-│   ├── lib.rs          # wasm_bindgen exports
-│   ├── terrain.rs      # heightmap generation (simplex noise)
-│   ├── pathfinder.rs   # A* pathfinding with elevation cost
-│   └── validator.rs    # track connectivity + gradient checks
+│   ├── lib.rs           # wasm_bindgen exports
+│   ├── signals.rs       # Block signal logic, track occupancy
+│   ├── scheduler.rs     # Timetable, delay calculation, punctuality scoring
+│   ├── physics.rs       # Speed, braking distance, fuel consumption
+│   └── npc.rs           # NPC preference matching, rating calculation
 ```
 
-Expose these functions to JS via `wasm_bindgen`:
-- `generate_terrain(width, height, seed) -> Float32Array` (heightmap)
-- `find_path(tracks: &[u32], stations: &[u32], width, height, heightmap: &[f32]) -> Vec<u32>` (returns cell indices of optimal path)
-- `validate_track(tracks: &[u32], heightmap: &[f32], max_gradient: f32) -> ValidationResult` (returns which placements are invalid and why)
+Expose to JS:
+- `check_signal(position, speed, block_occupancy) -> SignalState`
+- `calculate_arrival(current_pos, speed, target_station) -> ArrivalInfo`
+- `calculate_rating(npc_prefs, journey_stats) -> Rating`
+- `check_collision(train_pos, obstacles) -> CollisionResult`
+- `calculate_fuel(speed_history, distance) -> FuelStats`
 
-### Getting Started
+---
 
-1. Scaffold with `npm create vite@latest wizrails -- --template react-ts`
-2. Install: `npm i @react-three/fiber @react-three/drei three zustand @types/three`
-3. Set up wasm-pack: `cargo install wasm-pack`, create `wasm-engine/` crate
-4. Build WASM: `cd wasm-engine && wasm-pack build --target web`
-5. Import in React: `import init, { generate_terrain, find_path } from '../wasm-engine/pkg'`
+## Auto-Builders / Templates
 
-Start with terrain rendering + click-to-place tracks, then add pathfinding, then the train animation. Layer in polish (particles, sound, camera effects) as time allows.
+The New Delhi → Chandigarh route comes **fully pre-built** with:
+- All 5 stations placed with accurate-ish distances
+- Scenery layers for each segment pre-configured
+- Signal blocks placed at realistic intervals
+- Speed zones marked
+- A default "Standard Shatabdi" train template:
+  - 1 Executive AC Chair Car
+  - 7 AC Chair Cars
+  - 1 Pantry Car
+  - Pre-set food menu (Shatabdi meals are included in ticket price)
 
-### Stretch Goals (if you finish early on the ride)
+The player can customize the train interior but the route infrastructure is ready to play immediately.
 
-- **Day/night cycle** — sun moves across the sky, warm sunrise over Delhi, cool blue moonlight over Shimla
-- **Sound design** — chugging train sounds, whistle at stations, ambient birds/wind
-- **Tunnel pieces** — special track type that goes through mountains instead of over them (cheaper but limited)
-- **Historical info popups** — when the train passes landmarks, show a small card about the real Kalka-Shimla railway (UNESCO World Heritage!)
-- **Leaderboard** — fewest tracks used, lowest budget, fastest route
+---
+
+## Getting Started (for AI agent implementing this)
+
+1. **Rip out all 3D code** — remove React Three Fiber, drei, postprocessing, Three.js dependencies
+2. **Keep** Zustand, Vite, React, TypeScript, and the Rust/WASM setup
+3. **Add** HTML Canvas 2D rendering system with a game loop
+4. **Build in order:**
+   - Canvas rendering system + game loop
+   - Parallax scrolling backgrounds (scenery)
+   - Train exterior rendering (pixel art train moving along tracks)
+   - Speed/throttle controls + signal system
+   - Station stops with timers
+   - Train interior view (cross-section)
+   - NPC passenger system + ratings
+   - Random events
+   - Polish: day/night progression, weather, sound
+5. **Pixel art:** Generate programmatically where possible (geometric shapes, gradients), use hand-crafted sprites for key elements (train, characters, stations)
+6. **WASM module:** Update Rust code — remove terrain generation, add signal/scheduler/physics engines
+
+### Important Implementation Notes
+- The canvas should be responsive but maintain pixel-perfect scaling
+- Use `requestAnimationFrame` for the game loop, not React re-renders for animation
+- Keep React for UI overlay (HUD, menus, dialogs) on top of the canvas
+- Game state in Zustand, rendering reads from Zustand store
+- Pixel art scale: render at low res (e.g., 480×270) and CSS scale up with `image-rendering: pixelated`

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { ThreeEvent } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { useGameStore } from '../store';
 
 function TrackPiece({ cell, gridWidth, gridHeight, heightmap, tracks, isInvalid, isFlash }: {
@@ -25,7 +25,6 @@ function TrackPiece({ cell, gridWidth, gridHeight, heightmap, tracks, isInvalid,
   const hasLeft = col > 0 && tracks.has(row * gridWidth + col - 1);
   const hasRight = col < gridWidth - 1 && tracks.has(row * gridWidth + col + 1);
 
-  const isVertical = (hasTop || hasBottom) && !hasLeft && !hasRight;
   const isHorizontal = (hasLeft || hasRight) && !hasTop && !hasBottom;
   const isCurve = (hasTop || hasBottom) && (hasLeft || hasRight);
 
@@ -80,7 +79,6 @@ export function TrackGrid() {
   const activeTool = useGameStore((s) => s.activeTool);
   const toggleTrack = useGameStore((s) => s.toggleTrack);
   const removeTrack = useGameStore((s) => s.removeTrack);
-  const addFlashCell = useGameStore((s) => s.addFlashCell);
   const gameMode = useGameStore((s) => s.gameMode);
 
   const [hoveredCell, setHoveredCell] = useState<number | null>(null);

@@ -1,5 +1,4 @@
 import { Html } from '@react-three/drei';
-import * as THREE from 'three';
 import { useGameStore } from '../store';
 
 function StationBuilding({ name, row, col, color, heightmap, gridWidth, gridHeight }: {

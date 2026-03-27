@@ -113,7 +113,6 @@ export function Train() {
   const trainProgress = useGameStore((s) => s.trainProgress);
   const setTrainProgress = useGameStore((s) => s.setTrainProgress);
   const setTrainRunning = useGameStore((s) => s.setTrainRunning);
-  const setGameMode = useGameStore((s) => s.setGameMode);
   const setCurrentStationIndex = useGameStore((s) => s.setCurrentStationIndex);
   const heightmap = useGameStore((s) => s.heightmap);
   const gridWidth = useGameStore((s) => s.gridWidth);

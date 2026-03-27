@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import * as THREE from 'three';
 import { useGameStore } from '../store';
 
 function Tree({ position, scale, isPine }: {

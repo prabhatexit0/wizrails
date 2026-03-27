@@ -23,7 +23,7 @@ export function CelebrationParticles() {
   }, [currentStationIndex, trainRunning, activeStation]);
 
   const count = 60;
-  const { positions, velocities, center } = useMemo(() => {
+  const { positions, velocities } = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const vel = new Float32Array(count * 3);
 
@@ -45,7 +45,7 @@ export function CelebrationParticles() {
       vel[i * 3 + 2] = (Math.random() - 0.5) * 3;
     }
 
-    return { positions: pos, velocities: vel, center: [cx, cy, cz] };
+    return { positions: pos, velocities: vel };
   }, [activeStation, stations, heightmap, gridWidth, gridHeight]);
 
   useFrame((_, delta) => {
@@ -73,9 +73,7 @@ export function CelebrationParticles() {
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
+          args={[positions, 3]}
         />
       </bufferGeometry>
       <pointsMaterial

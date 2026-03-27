@@ -1,0 +1,14 @@
+## Codebase Patterns
+- Frontend is in `frontend/` — Vite + React + TypeScript
+- WASM engine is in `wasm-engine/` — Rust with wasm-pack, target=web
+- Build with `make build` (builds WASM first, then frontend)
+- Dev server with `make dev` (builds WASM first, then starts Vite)
+- Zustand store is at `frontend/src/store.ts`
+- Canvas game components go in `frontend/src/components/`
+- App.tsx is the main entry — React overlays on top of Canvas
+- WASM imported from `../../wasm-engine/pkg/wasm_engine.js` (relative to frontend/src)
+- Vite config at `frontend/vite.config.ts` has `server.fs.allow` for WASM pkg access
+- Full design doc at `prompt.md` in project root — READ THIS for route/scenery details
+- Pixel art canvas: render at 480x270, scale up with CSS `image-rendering: pixelated`
+- Use requestAnimationFrame for game loop, React for UI overlays only
+---
